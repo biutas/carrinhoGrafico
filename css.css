@@ -1,0 +1,52 @@
+html, body{
+    margin: 0;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: row;
+    justify-content: space-evenly;
+    align-content: center;
+    align-items: center;
+    flex-grow: 0;
+    background: #0a0a0a;
+}
+canvas{
+    background: #39504A;
+    /* width: 100vw; */
+}
+.formas{
+    width: 100px;
+    height: 600px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center
+}
+.quadrado{
+    width: 100px;
+    height: 100px;
+    background: coral;
+    margin-bottom: 2rem;
+    transition: all .3s cubic-bezier(0.67, -0.01, 0.23, 0.99);
+}
+.formas div:hover{
+    transform: scale(1.1);
+    cursor: pointer;
+    transition: all .3s cubic-bezier(0.67, -0.01, 0.23, 0.99);
+}
+.circulo{
+    width: 100px;
+    height: 100px;
+    border-radius: 100px;
+    background: coral;
+    margin-bottom: 2rem;
+    transition: all .3s cubic-bezier(0.67, -0.01, 0.23, 0.99);
+}
+.triangulo{
+    width: 0px;
+    height: 0px;
+    border-color: coral transparent;
+    border-style: solid;
+    border-width: 0px 50px 80px 50px;
+    transition: all .3s cubic-bezier(0.67, -0.01, 0.23, 0.99);
+}
