@@ -1,23 +1,44 @@
 // Comandos
-    //  L - Liga os farois - OK
-    //  B - Buzina - OK
-    //  , - Seta para esquerda
-    //  . - Seta para direita
+        //  L - Liga os farois - OK
+        //  B - Buzina - OK
+        //  , - Seta para esquerda - OK
+        //  . - Seta para direita - OK
     //  espaço - Freio de mão / drift
-    // E - ligar carro - OK
-    //  A - Marcha pra cima - OK
-    //  Z - Marcha pra baixo - OK
-    //  Seta esquerda - vira esquerda (Girar roda apenas) - OK
-    //  Seta direita - vira direita (Girar roda apenas) - OK
-    //  Seta cima - acelera - OK
-    //  Seta baixo - freia - 
+        // E - ligar carro - OK
+        //  A - Marcha pra cima - OK
+        //  Z - Marcha pra baixo - OK
+        //  Seta esquerda - vira esquerda (Girar roda apenas) - OK
+        //  Seta direita - vira direita (Girar roda apenas) - OK
+        //  Seta cima - acelera - OK
+        //  Seta baixo - freia -  OK
 
 "use strict";
+var socket = io.connect('http://localhost:3000');
 var canvas = document.getElementById("tela");
 var ctx = canvas.getContext("2d");
 document.getElementById('tela').setAttribute('width', window.innerWidth)
 document.getElementById('tela').setAttribute('height', window.innerHeight)
 
+socket.on('id',(id)=>{
+    console.log(id)
+    localStorage.setItem('id', id)
+})
+var arrayVeiculos = [];
+socket.on('carroMovido',(gameState)=>{
+    for (let player in gameState.players) {
+        drawPlayer(gameState.players[player])
+      }
+})
+const drawPlayer = (player) => {
+    ctx.save();
+    ctx.translate(canvas.width/2, canvas.height/2)
+    // ctx.beginPath();
+    
+    ctx.fillRect(0, 0, 100,100);
+    // ctx.fill();
+    // ctx.closePath();
+    ctx.restore();
+  };
 var x = 0, y = 0;
 var ang = 0;
 var teclas = [];
@@ -32,7 +53,9 @@ freiando = false,
 setaEsquerda = false,
 setaEsquerdaCount = 0,
 setaDireita = false,
-setaDireitaCount = 0;
+setaDireitaCount = 0,
+freioDeMao = false,
+escala = 1;
 var ligarCarro = new Audio("ligar.mp3");
 var buzinar = new Audio("buzinar.mp3");
 for(var i = 0; i < 256; i++){
@@ -44,11 +67,37 @@ function desenhar(){
     processaTeclas();
     ctx.clearRect(0,0,canvas.width,canvas.height);
     desenharCarro();
+    socket.emit('moverCarro', 
+        {'x': x,
+         'y':y,
+        'direcao':direcao,
+        'farolAceso': farolAceso,
+        'direcaoRodas': direcaoRodas,
+        'velocidade': velocidade,
+        'marcha': marcha,
+        'ligado': ligado,
+        'acelerando': acelerando,
+        'freiando': freiando
+        }
+    );
+    desenharPlayers();
     requestAnimationFrame(desenhar); 
 }
 requestAnimationFrame(desenhar);
 
+function desenharPlayers(){
+    console.log('desenhando')
+    for (let player in arrayVeiculos.player) {
+        // rawPlayer(gameState.players[player])
+        console.log(player.x)
+        ctx.save();
+        ctx.fillRect(player.x,player.y,10,10)
+        ctx.restore();
+      }
+}
+
 function desenharCarro(){
+    
     // Define tamanho do carro (7% da tela)
     var largCarro = Math.round(canvas.width*0.04);
     var altCarro = Math.round(canvas.height*0.05);
@@ -90,7 +139,7 @@ function desenharCarro(){
             if(velocidade == 0){
                 // velocidade =1;
                 x += (velocidade * marcha) * Math.cos(Math.PI/180 * (-direcao ) );
-            y += (velocidade * marcha) * Math.sin(Math.PI/180 * (-direcao) );    
+                y += (velocidade * marcha) * Math.sin(Math.PI/180 * (-direcao) );    
             }else{
                 x += (velocidade * -marcha) * Math.cos(Math.PI/180 * (-direcao ) );
                 y += (velocidade * -marcha) * Math.sin(Math.PI/180 * (-direcao) );    
@@ -107,11 +156,23 @@ function desenharCarro(){
     ctx.save();
     ctx.translate(x, y);
     ctx.translate(canvas.width/2 - largCarro/2, canvas.height/2 - altCarro/2);
+    ctx.scale(escala,escala);
     if(marcha >= 0){
-        ctx.rotate(Math.PI/180 * direcao);
+        if(freioDeMao){
+            // direcao = direcao*2
+            ctx.rotate(Math.PI/180 * (direcao + (direcaoRodas*1.3)));
+        }else{
+            ctx.rotate(Math.PI/180 * direcao);
+        }
     }
     else if(marcha < 0){
-        ctx.rotate(Math.PI/180 * (-direcao));
+        console.log(direcao)
+        if(direcao < 0){
+            direcao + 180
+        }else{
+            direcao - 180
+        }
+        ctx.rotate(Math.PI/180 * (direcao));
     }else{
         ctx.rotate(Math.PI/180 * direcao);
     }
@@ -379,13 +440,26 @@ document.onkeyup = function (evt){
 function processaTeclas() {
     if(teclas[37]){
         if(acelerando || freiando || velocidade !== 0){
-            direcao = direcao + (direcaoRodas)
-            direcaoRodas = direcaoRodas *.5;
+            var multiplicadorDirecao = velocidade * 2;
+            if(multiplicadorDirecao > 1){
+                multiplicadorDirecao = 1;
+            }
+            if(freioDeMao){
+                direcao = direcao + (direcaoRodas*1.5)
+                direcaoRodas = direcaoRodas *.5;
+            }else{
+                direcao = direcao + (direcaoRodas * multiplicadorDirecao)
+                direcaoRodas = direcaoRodas *.5;
+            }
         }
     }
     if(teclas[39]){
         if(acelerando || freiando    || velocidade !== 0){
-            direcao = direcao + direcaoRodas
+            var multiplicadorDirecao = velocidade * 2;
+            if(multiplicadorDirecao > 1){
+                multiplicadorDirecao = 1;
+            }
+            direcao = direcao + (direcaoRodas * multiplicadorDirecao)
             direcaoRodas = direcaoRodas *.5;
             
         }
@@ -401,6 +475,20 @@ function processaTeclas() {
         freiando = true;
     }else{
         freiando = false;
+    }
+    // espaco (freio de mão/ drift)
+    if(teclas[32]){
+        freioDeMao = true;
+    }else{
+        freioDeMao = false;
+    }
+
+    // zoom in
+    if(teclas[107]){
+        escala = escala + 0.1
+    }
+    if(teclas[109]){
+        escala = escala - 0.1
     }
 }
 
