@@ -86,7 +86,7 @@ function desenhar(){
 requestAnimationFrame(desenhar);
 
 function desenharPlayers(){
-    console.log('desenhando')
+    // console.log('desenhando')
     for (let player in arrayVeiculos.player) {
         // rawPlayer(gameState.players[player])
         console.log(player.x)
@@ -488,7 +488,10 @@ function processaTeclas() {
         escala = escala + 0.1
     }
     if(teclas[109]){
-        escala = escala - 0.1
+        console.log(escala - .1)
+        if((escala - .1) > 0.5){
+            escala = escala - 0.1
+        }
     }
 }
 
